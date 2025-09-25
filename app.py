@@ -5,26 +5,51 @@ import os
 app = Flask(__name__)
 
 # Load the CSV data when the application starts
+# Load the CSV data when the application starts
 def load_data():
     animal_sounds_data = []
     csv_path = os.path.join(os.path.dirname(__file__), 'animal_sounds.csv')
-    try:
-        with open(csv_path, 'r', encoding='utf-8') as file:
-            reader = csv.DictReader(file)
-            for row in reader:
-                animal_sounds_data.append({
-                    'Animal': row['Animal'].strip(),
-                    'Sound': row['Sound'].strip(),
-                    'Call_For': row['Call_For'].strip()
-                })
-        print(f"Loaded {len(animal_sounds_data)} records from CSV")
-        return animal_sounds_data
-    except FileNotFoundError:
-        print("Error: animal_sounds.csv file not found!")
-        return []
-    except Exception as e:
-        print(f"Error loading data: {e}")
-        return []
+    
+    # Try multiple possible locations
+    possible_paths = [
+        'animal_sounds.csv',
+        csv_path,
+        os.path.join(os.getcwd(), 'animal_sounds.csv')
+    ]
+    
+    for path in possible_paths:
+        try:
+            with open(path, 'r', encoding='utf-8') as file:
+                content = file.read()
+                print(f"CSV file found at: {path}")
+                print(f"First 200 characters: {content[:200]}")
+                
+                file.seek(0)  # Reset file pointer
+                reader = csv.DictReader(file)
+                
+                for row_num, row in enumerate(reader, 1):
+                    if 'Animal' not in row or 'Sound' not in row or 'Call_For' not in row:
+                        print(f"Row {row_num} missing required columns: {row.keys()}")
+                        continue
+                        
+                    animal_sounds_data.append({
+                        'Animal': row['Animal'].strip(),
+                        'Sound': row['Sound'].strip(),
+                        'Call_For': row['Call_For'].strip()
+                    })
+                
+                print(f"Successfully loaded {len(animal_sounds_data)} records from {path}")
+                return animal_sounds_data
+                
+        except FileNotFoundError:
+            print(f"CSV file not found at: {path}")
+            continue
+        except Exception as e:
+            print(f"Error loading data from {path}: {e}")
+            continue
+    
+    print("No CSV file found in any location!")
+    return []
 
 # Initialize the data
 animal_data = load_data()
